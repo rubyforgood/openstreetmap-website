@@ -166,19 +166,19 @@ class UsersControllerTest < ActionController::TestCase
 
     assert_routing(
       { :path => "/users", :method => :get },
-      { :controller => "users", :action => "list" }
+      { :controller => "users", :action => "index" }
     )
     assert_routing(
       { :path => "/users", :method => :post },
-      { :controller => "users", :action => "list" }
+      { :controller => "users", :action => "index" }
     )
     assert_routing(
       { :path => "/users/status", :method => :get },
-      { :controller => "users", :action => "list", :status => "status" }
+      { :controller => "users", :action => "index", :status => "status" }
     )
     assert_routing(
       { :path => "/users/status", :method => :post },
-      { :controller => "users", :action => "list", :status => "status" }
+      { :controller => "users", :action => "index", :status => "status" }
     )
   end
 
@@ -1385,7 +1385,7 @@ class UsersControllerTest < ActionController::TestCase
     assert_equal "deleted", user.status
   end
 
-  def test_list_get
+  def test_index_get
     user = create(:user)
     moderator_user = create(:moderator_user)
     administrator_user = create(:administrator_user)
@@ -1397,21 +1397,21 @@ class UsersControllerTest < ActionController::TestCase
     assert_equal 7, User.count
 
     # Shouldn't work when not logged in
-    get :list
+    get :index
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
 
     session[:user] = user.id
 
     # Shouldn't work when logged in as a normal user
-    get :list
+    get :index
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
 
     session[:user] = moderator_user.id
 
     # Shouldn't work when logged in as a moderator
-    get :list
+    get :index
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
 
@@ -1419,25 +1419,25 @@ class UsersControllerTest < ActionController::TestCase
 
     # Note there is a header row, so all row counts are users + 1
     # Should work when logged in as an administrator
-    get :list
+    get :index
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 7 + 1
 
     # Should be able to limit by status
-    get :list, :params => { :status => "suspended" }
+    get :index, :params => { :status => "suspended" }
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 1 + 1
 
     # Should be able to limit by IP address
-    get :list, :params => { :ip => "1.2.3.4" }
+    get :index, :params => { :ip => "1.2.3.4" }
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 1 + 1
   end
 
-  def test_list_get_paginated
+  def test_index_get_paginated
     1.upto(100).each do |n|
       User.create(:display_name => "extra_#{n}",
                   :email => "extra#{n}@example.com",
@@ -1449,29 +1449,29 @@ class UsersControllerTest < ActionController::TestCase
     # 100 examples, an administrator, and a granter for the admin.
     assert_equal 102, User.count
 
-    get :list
+    get :index
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 51
 
-    get :list, :params => { :page => 2 }
+    get :index, :params => { :page => 2 }
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 51
 
-    get :list, :params => { :page => 3 }
+    get :index, :params => { :page => 3 }
     assert_response :success
-    assert_template :list
+    assert_template :index
     assert_select "table#user_list tr", :count => 3
   end
 
-  def test_list_post_confirm
+  def test_index_post_confirm
     inactive_user = create(:user, :pending)
     suspended_user = create(:user, :suspended)
 
     # Shouldn't work when not logged in
     assert_no_difference "User.active.count" do
-      post :list, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
+      post :index, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1482,7 +1482,7 @@ class UsersControllerTest < ActionController::TestCase
 
     # Shouldn't work when logged in as a normal user
     assert_no_difference "User.active.count" do
-      post :list, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
+      post :index, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1493,7 +1493,7 @@ class UsersControllerTest < ActionController::TestCase
 
     # Shouldn't work when logged in as a moderator
     assert_no_difference "User.active.count" do
-      post :list, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
+      post :index, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1504,21 +1504,21 @@ class UsersControllerTest < ActionController::TestCase
 
     # Should work when logged in as an administrator
     assert_difference "User.active.count", 2 do
-      post :list, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
+      post :index, :params => { :confirm => 1, :user => { inactive_user.id => 1, suspended_user.id => 1 } }
     end
     assert_response :redirect
-    assert_redirected_to :action => :list
+    assert_redirected_to :action => :index
     assert_equal "confirmed", inactive_user.reload.status
     assert_equal "confirmed", suspended_user.reload.status
   end
 
-  def test_list_post_hide
+  def test_index_post_hide
     normal_user = create(:user)
     confirmed_user = create(:user, :confirmed)
 
     # Shouldn't work when not logged in
     assert_no_difference "User.active.count" do
-      post :list, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
+      post :index, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1529,7 +1529,7 @@ class UsersControllerTest < ActionController::TestCase
 
     # Shouldn't work when logged in as a normal user
     assert_no_difference "User.active.count" do
-      post :list, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
+      post :index, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1540,7 +1540,7 @@ class UsersControllerTest < ActionController::TestCase
 
     # Shouldn't work when logged in as a moderator
     assert_no_difference "User.active.count" do
-      post :list, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
+      post :index, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
     end
     assert_response :redirect
     assert_redirected_to :action => :login, :referer => users_path
@@ -1551,10 +1551,10 @@ class UsersControllerTest < ActionController::TestCase
 
     # Should work when logged in as an administrator
     assert_difference "User.active.count", -2 do
-      post :list, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
+      post :index, :params => { :hide => 1, :user => { normal_user.id => 1, confirmed_user.id => 1 } }
     end
     assert_response :redirect
-    assert_redirected_to :action => :list
+    assert_redirected_to :action => :index
     assert_equal "deleted", normal_user.reload.status
     assert_equal "deleted", confirmed_user.reload.status
   end

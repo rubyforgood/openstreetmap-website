@@ -14,7 +14,7 @@ class UsersController < ApplicationController
   before_action :require_allow_read_prefs, :only => [:api_details]
   before_action :require_allow_read_gpx, :only => [:api_gpx_files]
   before_action :require_cookies, :only => [:new, :login, :confirm]
-  before_action :require_administrator, :only => [:set_status, :delete, :list]
+  before_action :require_administrator, :only => [:set_status, :delete, :index]
   around_action :api_call_handle_error, :only => [:api_read, :api_details, :api_gpx_files]
   before_action :lookup_user_by_id, :only => [:api_read]
   before_action :lookup_user_by_name, :only => [:set_status, :delete]
@@ -475,8 +475,8 @@ class UsersController < ApplicationController
   end
 
   ##
-  # display a list of users matching specified criteria
-  def list
+  # display a index of users matching specified criteria
+  def index
     if request.post?
       ids = params[:user].keys.collect(&:to_i)
 

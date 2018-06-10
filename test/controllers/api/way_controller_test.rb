@@ -1,7 +1,7 @@
 require "test_helper"
 require "way_controller"
 
-class Api::WayControllerTest < ActionController::TestCase
+class WayControllerTest < ActionController::TestCase
   ##
   # test all routes which lead to this controller
   def test_routes

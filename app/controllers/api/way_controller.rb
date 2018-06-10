@@ -1,4 +1,4 @@
-class WayController < ApplicationController
+class Api::WayController < ApplicationController
   require "xml/libxml"
 
   skip_before_action :verify_authenticity_token
@@ -19,7 +19,7 @@ class WayController < ApplicationController
     render :plain => way.id.to_s
   end
 
-  def read
+  def show
     way = Way.find(params[:id])
 
     response.last_modified = way.timestamp
@@ -42,7 +42,7 @@ class WayController < ApplicationController
   end
 
   # This is the API call to delete a way
-  def delete
+  def destroy
     way = Way.find(params[:id])
     new_way = Way.from_xml(request.raw_post)
 

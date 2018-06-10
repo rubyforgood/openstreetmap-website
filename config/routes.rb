@@ -36,28 +36,36 @@ OpenStreetMap::Application.routes.draw do
         collection do
           put "create"
         end
+
+        member do
+          get "ways" => "way#ways_for_node"
+        end
       end
       get "nodes" => "node#nodes"
+
+      resources :way, :controller => "way", :constraints => { :id => /\d+/ }, :only => [:show, :update, :destroy] do
+        collection do
+          put "create"
+        end
+
+        member do
+          get "full" => "way#full"
+        end
+      end
+      get "ways" => "way#ways"
     end
   end
 
   scope "api/0.6" do
-    get "node/:id/ways" => "way#ways_for_node", :id => /\d+/
     get "node/:id/relations" => "relation#relations_for_node", :id => /\d+/
     get "node/:id/history" => "old_node#history", :id => /\d+/
     post "node/:id/:version/redact" => "old_node#redact", :version => /\d+/, :id => /\d+/
     get "node/:id/:version" => "old_node#version", :id => /\d+/, :version => /\d+/
 
-    put "way/create" => "way#create"
     get "way/:id/history" => "old_way#history", :id => /\d+/
-    get "way/:id/full" => "way#full", :id => /\d+/
     get "way/:id/relations" => "relation#relations_for_way", :id => /\d+/
     post "way/:id/:version/redact" => "old_way#redact", :version => /\d+/, :id => /\d+/
     get "way/:id/:version" => "old_way#version", :id => /\d+/, :version => /\d+/
-    get "way/:id" => "way#read", :id => /\d+/
-    put "way/:id" => "way#update", :id => /\d+/
-    delete "way/:id" => "way#delete", :id => /\d+/
-    get "ways" => "way#ways"
 
     put "relation/create" => "relation#create"
     get "relation/:id/relations" => "relation#relations_for_relation", :id => /\d+/

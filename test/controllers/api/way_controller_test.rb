@@ -1,33 +1,33 @@
 require "test_helper"
-require "way_controller"
+require "api/way_controller"
 
-class WayControllerTest < ActionController::TestCase
+class Api::WayControllerTest < ActionController::TestCase
   ##
   # test all routes which lead to this controller
   def test_routes
     assert_routing(
       { :path => "/api/0.6/way/create", :method => :put },
-      { :controller => "way", :action => "create" }
+      { :controller => "api/way", :action => "create" }
     )
     assert_routing(
       { :path => "/api/0.6/way/1/full", :method => :get },
-      { :controller => "way", :action => "full", :id => "1" }
+      { :controller => "api/way", :action => "full", :id => "1" }
     )
     assert_routing(
       { :path => "/api/0.6/way/1", :method => :get },
-      { :controller => "way", :action => "read", :id => "1" }
+      { :controller => "api/way", :action => "show", :id => "1" }
     )
     assert_routing(
       { :path => "/api/0.6/way/1", :method => :put },
-      { :controller => "way", :action => "update", :id => "1" }
+      { :controller => "api/way", :action => "update", :id => "1" }
     )
     assert_routing(
       { :path => "/api/0.6/way/1", :method => :delete },
-      { :controller => "way", :action => "delete", :id => "1" }
+      { :controller => "api/way", :action => "destroy", :id => "1" }
     )
     assert_routing(
       { :path => "/api/0.6/ways", :method => :get },
-      { :controller => "way", :action => "ways" }
+      { :controller => "api/way", :action => "ways" }
     )
   end
 
@@ -37,15 +37,15 @@ class WayControllerTest < ActionController::TestCase
 
   def test_read
     # check that a visible way is returned properly
-    get :read, :params => { :id => create(:way).id }
+    get :show, :params => { :id => create(:way).id }
     assert_response :success
 
     # check that an invisible way is not returned
-    get :read, :params => { :id => create(:way, :deleted).id }
+    get :show, :params => { :id => create(:way, :deleted).id }
     assert_response :gone
 
     # check chat a non-existent way is not returned
-    get :read, :params => { :id => 0 }
+    get :show, :params => { :id => 0 }
     assert_response :not_found
   end
 
@@ -274,34 +274,34 @@ class WayControllerTest < ActionController::TestCase
     relation = relation_member.relation
 
     # first try to delete way without auth
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :unauthorized
 
     # now set auth using the private user
     basic_authorization private_user.email, "test"
 
     # this shouldn't work as with the 0.6 api we need pay load to delete
-    delete :delete, :params => { :id => private_way.id }
+    delete :destroy, :params => { :id => private_way.id }
     assert_response :forbidden
 
     # Now try without having a changeset
     content "<osm><way id='#{private_way.id}'/></osm>"
-    delete :delete, :params => { :id => private_way.id }
+    delete :destroy, :params => { :id => private_way.id }
     assert_response :forbidden
 
     # try to delete with an invalid (closed) changeset
     content update_changeset(private_way.to_xml, private_closed_changeset.id)
-    delete :delete, :params => { :id => private_way.id }
+    delete :destroy, :params => { :id => private_way.id }
     assert_response :forbidden
 
     # try to delete with an invalid (non-existent) changeset
     content update_changeset(private_way.to_xml, 0)
-    delete :delete, :params => { :id => private_way.id }
+    delete :destroy, :params => { :id => private_way.id }
     assert_response :forbidden
 
     # Now try with a valid changeset
     content private_way.to_xml
-    delete :delete, :params => { :id => private_way.id }
+    delete :destroy, :params => { :id => private_way.id }
     assert_response :forbidden
 
     # check the returned value - should be the new version number
@@ -312,17 +312,17 @@ class WayControllerTest < ActionController::TestCase
 
     # this won't work since the way is already deleted
     content private_deleted_way.to_xml
-    delete :delete, :params => { :id => private_deleted_way.id }
+    delete :destroy, :params => { :id => private_deleted_way.id }
     assert_response :forbidden
 
     # this shouldn't work as the way is used in a relation
     content private_used_way.to_xml
-    delete :delete, :params => { :id => private_used_way.id }
+    delete :destroy, :params => { :id => private_used_way.id }
     assert_response :forbidden,
                     "shouldn't be able to delete a way used in a relation (#{@response.body}), when done by a private user"
 
     # this won't work since the way never existed
-    delete :delete, :params => { :id => 0 }
+    delete :destroy, :params => { :id => 0 }
     assert_response :forbidden
 
     ### Now check with a public user
@@ -330,27 +330,27 @@ class WayControllerTest < ActionController::TestCase
     basic_authorization user.email, "test"
 
     # this shouldn't work as with the 0.6 api we need pay load to delete
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :bad_request
 
     # Now try without having a changeset
     content "<osm><way id='#{way.id}'/></osm>"
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :bad_request
 
     # try to delete with an invalid (closed) changeset
     content update_changeset(way.to_xml, closed_changeset.id)
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :conflict
 
     # try to delete with an invalid (non-existent) changeset
     content update_changeset(way.to_xml, 0)
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :conflict
 
     # Now try with a valid changeset
     content way.to_xml
-    delete :delete, :params => { :id => way.id }
+    delete :destroy, :params => { :id => way.id }
     assert_response :success
 
     # check the returned value - should be the new version number
@@ -361,18 +361,18 @@ class WayControllerTest < ActionController::TestCase
 
     # this won't work since the way is already deleted
     content deleted_way.to_xml
-    delete :delete, :params => { :id => deleted_way.id }
+    delete :destroy, :params => { :id => deleted_way.id }
     assert_response :gone
 
     # this shouldn't work as the way is used in a relation
     content used_way.to_xml
-    delete :delete, :params => { :id => used_way.id }
+    delete :destroy, :params => { :id => used_way.id }
     assert_response :precondition_failed,
                     "shouldn't be able to delete a way used in a relation (#{@response.body})"
     assert_equal "Precondition failed: Way #{used_way.id} is still used by relations #{relation.id}.", @response.body
 
     # this won't work since the way never existed
-    delete :delete, :params => { :id => 0 }
+    delete :destroy, :params => { :id => 0 }
     assert_response :not_found
   end
 
